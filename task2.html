@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch with Lap History</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .stopwatch {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .time {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .buttons button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .buttons button:active {
+            transform: scale(0.98);
+        }
+
+        .buttons .start {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .buttons .stop {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .buttons .reset {
+            background-color: #ffc107;
+            color: white;
+        }
+
+        .buttons .lap {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .laps {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .laps ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .laps ul li {
+            padding: 5px 0;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .history {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .history h2 {
+            margin-bottom: 10px;
+        }
+
+        .history ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .history ul li {
+            padding: 5px 0;
+            border-bottom: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="stopwatch">
+        <div class="time" id="display">00:00:00.000</div>
+        <div class="buttons">
+            <button class="start" id="startStopBtn">Start</button>
+            <button class="lap" id="lapBtn">Lap</button>
+            <button class="reset" id="resetBtn">Reset</button>
+        </div>
+        <div class="laps" id="laps"></div>
+        <div class="history">
+            <h2>Lap History</h2>
+            <ul id="history"></ul>
+        </div>
+    </div>
+    <script>
+        let startTime;
+        let updatedTime;
+        let difference;
+        let tInterval;
+        let running = false;
+        let lapsContainer = document.getElementById('laps');
+        let historyContainer = document.getElementById('history');
+        let startStopBtn = document.getElementById('startStopBtn');
+        let lapBtn = document.getElementById('lapBtn');
+        let resetBtn = document.getElementById('resetBtn');
+        let display = document.getElementById('display');
+        let lapTimes = JSON.parse(localStorage.getItem('lapTimes')) || [];
+
+        function updateHistory() {
+            historyContainer.innerHTML = '';
+            lapTimes.forEach((lap, index) => {
+                let lapTime = document.createElement('li');
+                lapTime.innerHTML = `Lap ${index + 1}: ${lap}`;
+                historyContainer.appendChild(lapTime);
+            });
+        }
+
+        function startStop() {
+            if (!running) {
+                startTime = new Date().getTime();
+                tInterval = setInterval(getShowTime, 1);
+                running = true;
+                startStopBtn.innerHTML = "Stop";
+                startStopBtn.classList.remove("start");
+                startStopBtn.classList.add("stop");
+            } else {
+                clearInterval(tInterval);
+                running = false;
+                startStopBtn.innerHTML = "Start";
+                startStopBtn.classList.remove("stop");
+                startStopBtn.classList.add("start");
+            }
+        }
+
+        function getShowTime() {
+            updatedTime = new Date().getTime();
+            difference = updatedTime - startTime;
+            let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((difference % (1000 * 60)) / 1000);
+            let milliseconds = Math.floor((difference % 1000) / 10);
+
+            hours = (hours < 10) ? "0" + hours : hours;
+            minutes = (minutes < 10) ? "0" + minutes : minutes;
+            seconds = (seconds < 10) ? "0" + seconds : seconds;
+            milliseconds = (milliseconds < 10) ? "00" + milliseconds : (milliseconds < 100) ? "0" + milliseconds : milliseconds;
+
+            display.innerHTML = hours + ":" + minutes + ":" + seconds + "." + milliseconds;
+        }
+
+        function reset() {
+            clearInterval(tInterval);
+            running = false;
+            startStopBtn.innerHTML = "Start";
+            startStopBtn.classList.remove("stop");
+            startStopBtn.classList.add("start");
+            display.innerHTML = "00:00:00.000";
+            lapsContainer.innerHTML = "";
+        }
+
+        function lap() {
+            if (running) {
+                let lapTime = document.createElement('li');
+                lapTime.innerHTML = display.innerHTML;
+                lapsContainer.appendChild(lapTime);
+                lapTimes.push(display.innerHTML);
+                localStorage.setItem('lapTimes', JSON.stringify(lapTimes));
+                updateHistory();
+            }
+        }
+
+        startStopBtn.addEventListener('click', startStop);
+        lapBtn.addEventListener('click', lap);
+        resetBtn.addEventListener('click', reset);
+
+        // Initial update of lap history
+        updateHistory();
+    </script>
+</body>
+</html>
